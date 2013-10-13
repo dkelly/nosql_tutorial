@@ -1,12 +1,17 @@
 GEM
   remote: https://rubygems.org/
   specs:
+    bson (1.9.2)
+    bson_ext (1.9.2)
+      bson (~> 1.9.2)
     highline (1.6.19)
     mail (2.5.4)
       mime-types (~> 1.16)
       treetop (~> 1.4.8)
     mime (0.1)
     mime-types (1.25)
+    mongo (1.9.2)
+      bson (~> 1.9.2)
     polyglot (0.3.3)
     progressbar (0.21.0)
     ruby-gmail (0.3.0)
@@ -22,6 +27,9 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
+  bson_ext
   highline
+  mail
+  mongo
   progressbar
   ruby-gmail
