@@ -22,27 +22,33 @@ count_s = ARGV[1]
 folders = ARGV[2..-1]
 
 user = ask('User: ') if !user
-pass = ask('Pass: ') { |q| q.echo = false }
 count_s = ask('Count: ') if !count_s
 folders << ask('Folder: ') if !folders.length
 
 count = 0
 
-Gmail.new(user, pass) do |gmail|
-  gmail.peek = true
-  folders.each() do |folder|
-    download_folder = "messages/#{folder}"
+download_folders = []
+folders.each() do |folder|
+  download_folder = "messages/#{folder}"
     if !File.directory?(download_folder)
       FileUtils.mkdir_p(download_folder) 
+      download_folders << { :download_folder => download_folder, :folder => folder }
+    end
+end
 
-      f = gmail.mailbox(folder)
+if download_folders.length > 0
+  pass = ask('Pass: ') { |q| q.echo = false }
+  Gmail.new(user, pass) do |gmail|
+    gmail.peek = true
+    download_folders.each() do |info|
+      f = gmail.mailbox(info[:folder])
       count = ('all' == count_s) ? f.count : count_s.to_i
       count = [f.count, count].min()
-
-      progress = ProgressBar.new("<=#{folder}", count)
+      
+      progress = ProgressBar.new("<=#{info[:folder]}", count)
       step = 1
       f.emails.first(count).each do |m|
-        File.open("#{download_folder}/#{step}.mime", 'w+') do |of|
+        File.open("#{info[:download_folder]}/#{step}.mime", 'w+') do |of|
           of.write(m.raw_source)
         end
         progress.inc()
