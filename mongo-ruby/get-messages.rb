@@ -17,20 +17,47 @@ def store_part(db, p)
   doc
 end
 
-(user, folder) = ARGV
+user = ARGV[0]
+count_s = ARGV[1]
+folders = ARGV[2..-1]
 
 user = ask('User: ') if !user
 pass = ask('Pass: ') { |q| q.echo = false }
-folder = ask('Folder: ') if !folder
+count_s = ask('Count: ') if !count_s
+folders << ask('Folder: ') if !folders.length
+
+count = 0
+
+Gmail.new(user, pass) do |gmail|
+  gmail.peek = true
+  folders.each() do |folder|
+    download_folder = "messages/#{folder}"
+    if !File.directory?(download_folder)
+      FileUtils.mkdir_p(download_folder) 
+
+      f = gmail.mailbox(folder)
+      count = ('all' == count_s) ? f.count : count_s.to_i
+      count = [f.count, count].min()
+
+      progress = ProgressBar.new("<=#{folder}", count)
+      step = 1
+      f.emails.first(count).each do |m|
+        File.open("#{download_folder}/#{step}.mime", 'w+') do |of|
+          of.write(m.raw_source)
+        end
+        progress.inc()
+        step = step + 1
+      end
+    end
+  end
+end
 
 cl = MongoClient.new
 db = cl.db['mail']
 mailboxes = db['mailboxes']
-mailboxes.remove({'username' => user, 'name' => folder})
 
-Gmail.new(user, pass) do |gmail|
-  gmail.peek = true
-  f = gmail.mailbox(folder)
+folders.each() do |folder|
+  mailboxes.remove({'user' => user, 'name' => folder})
 
   doc = {
     'user' => user,
@@ -38,30 +65,14 @@ Gmail.new(user, pass) do |gmail|
     'messages' => []
   }
 
-  if !File.directory? 'messages'
-    FileUtils.mkdir_p('messages') 
-    progress = ProgressBar.new('Download: ', 100)
-    step = 1
-    f.emails.first(100).each do |m|
-      progress.set(step)
-      File.open("messages/#{step}.mime", 'w+') do |of|
-        of.write(m.raw_source)
-      end
-      step = step + 1
-    end
-  end
-
-  progress = ProgressBar.new('Store: ', 100)  
-  step = 1
-  Dir.glob('messages/*.mime') do |data|
+  progress = ProgressBar.new("=>#{folder}", count)  
+  Dir.glob("messages/#{folder}/*.mime") do |data|
     m = Mail.read(data)
     doc['messages'] << store_part(db, m)
-    progress.set(step)
-    step = step + 1
+    progress.inc()
   end
   
   mailboxes.insert(doc)
   progress.finish()
 end
-
 
