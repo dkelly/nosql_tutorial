@@ -12,12 +12,13 @@ module Populate
     doc
   end
 
-  def self.store_part_relational(db, p)
+  def self.store_part_relational(config, db, p)
     doc = {}
     p.header_fields.each do |fld|
       doc[fld.name.to_s] = fld.value.to_s
     end
-    doc['parts'] = p.parts.collect { |part| store_part_relational(db, part) }
+    doc['user'] = config[:username]
+    doc['parts'] = p.parts.collect { |part| store_part_relational(config, db, part) }
     db['parts'].insert(doc)
     
     doc.object_id
@@ -31,6 +32,7 @@ module Populate
     collection = db[config[:collection_name]]
 
     collection.remove({ 'user' => config[:username], 'name' => config[:name] })
+    db['parts'].remove({ 'user' => config[:username]})
 
     doc = {
       'user'     => config[:username],
@@ -56,7 +58,7 @@ module Populate
 
   def self.to_mongo_relational(config, interaction)
     to_mongo(config, interaction) do |db, message|
-      store_part_relational(db, message)
+      store_part_relational(config, db, message)
     end
   end
 end
