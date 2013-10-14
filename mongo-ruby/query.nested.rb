@@ -20,8 +20,16 @@ def folders(mailboxes, user)
 end
 
 def users(mailboxes)
-  groups = mailboxes.aggregate([{ '$group' => { '_id' => 'users', 'users' => { '$addToSet' => '$user' } } }])
-  groups.first()['users'].each() { |name| puts name }
+  groups = mailboxes.aggregate([
+                                { '$group' =>
+                                  {
+                                    '_id' => '$user',
+                                    'folders' => { '$sum' => 1 } }
+                                }
+                               ])
+  groups.each() do |g|
+    puts "#{g['_id']}: #{g['folders']} folders"
+  end
 end
 
 user = ARGV[0]
