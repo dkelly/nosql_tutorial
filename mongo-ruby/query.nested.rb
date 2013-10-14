@@ -14,7 +14,7 @@ def folder_contents(mailboxes, user, folder)
 end
 
 def folders(mailboxes, user)
-  mailboxes.find('user' => user).each() do |doc|
+  mailboxes.find({'user' => user}).each() do |doc|
     puts "(#{doc['messages'].length}) #{doc['name']}"
   end
 end
