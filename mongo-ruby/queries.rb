@@ -7,11 +7,26 @@ module Queries
     cl.db['mail']['mailboxes']
   end
 
+  def self.parts(cl)
+    cl.db['mail']['parts']
+  end
+
   def self.folder_contents_nested(cl, user, folder)
     mailboxes(cl).find({ :user => user, :name => folder}).each() do |doc|
       puts "#{doc['name']}:"
       message_no = 1
       doc['messages'].each() do |message|
+        puts "#{message_no}: #{message['Subject']}"
+        message_no += 1
+      end
+    end
+  end
+
+  def self.folder_contents_relational(cl, user, folder)
+    mailboxes(cl).find({ :user => user, :name => folder}).each() do |doc|
+      puts "#{doc['name']}:"
+      message_no = 1
+      parts(cl).find({'_id' => { '$in' => doc['messages']}}).each() do |message|
         puts "#{message_no}: #{message['Subject']}"
         message_no += 1
       end
