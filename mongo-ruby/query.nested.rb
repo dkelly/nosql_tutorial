@@ -19,14 +19,22 @@ def folders(mailboxes, user)
   end
 end
 
+def users(mailboxes)
+  groups = mailboxes.aggregate([{ '$group' => { '_id' => 'users', 'users' => { '$addToSet' => '$user' } } }])
+  groups.first()['users'].each() { |name| puts name }
+end
+
 user = ARGV[0]
 folder = ARGV[1]
 
 cl = MongoClient.new
 db = cl.db['mail']
 
-if folder
+if user && folder
   folder_contents(db['mailboxes'], user, folder)
-else
+elsif user
   folders(db['mailboxes'], user)
+else
+  users(db['mailboxes'])
 end
+
