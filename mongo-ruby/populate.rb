@@ -18,10 +18,10 @@ module Populate
       doc[fld.name.to_s] = fld.value.to_s
     end
     doc['user'] = config[:username]
+    doc['folder'] = config[:name]
     doc['parts'] = p.parts.collect { |part| store_part_relational(config, db, part) }
+
     db['parts'].insert(doc)
-    
-    doc.object_id
   end
 
   def self.to_mongo(config, interaction)
@@ -32,7 +32,7 @@ module Populate
     collection = db[config[:collection_name]]
 
     collection.remove({ 'user' => config[:username], 'name' => config[:name] })
-    db['parts'].remove({ 'user' => config[:username]})
+    db['parts'].remove({ 'user' => config[:username], 'folder' => config[:name] })
 
     doc = {
       'user'     => config[:username],
