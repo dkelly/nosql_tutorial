@@ -20,15 +20,34 @@ def folders(mailboxes, user)
 end
 
 def users(mailboxes)
-  groups = mailboxes.aggregate([
-                                { '$group' =>
-                                  {
-                                    '_id' => '$user',
-                                    'folders' => { '$sum' => 1 } }
-                                }
-                               ])
-  groups.each() do |g|
-    puts "#{g['_id']}: #{g['folders']} folders"
+  counts = {}
+  folder_counts = mailboxes.aggregate([
+                                       { '$group' =>
+                                         {
+                                           '_id' => '$user',
+                                           'count' => { '$sum' => 1 },
+                                         },
+                                       },
+                                      ])
+  folder_counts.each() do |user_counts|
+    counts[user_counts['_id']] = { :folders => user_counts['count'] }
+  end
+
+  message_counts = mailboxes.aggregate([
+                                        { '$unwind' => '$messages'},
+                                        { '$group' =>
+                                          {
+                                            '_id' => '$user',
+                                            'count' => { '$sum' => 1 },
+                                          },
+                                        },
+                                       ])
+  message_counts.each() do |user_counts|
+    counts[user_counts['_id']][:messages] = user_counts['count']
+  end
+
+  counts.each() do |k, v|
+    puts "#{k}: #{v[:folders]} folders, #{v[:messages]} messages"
   end
 end
 
