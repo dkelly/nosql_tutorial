@@ -11,8 +11,19 @@ module Populate
     
     doc
   end
-  
-  def self.to_mongo_nested(config, interaction)
+
+  def self.store_part_relational(db, p)
+    doc = {}
+    p.header_fields.each do |fld|
+      doc[fld.name.to_s] = fld.value.to_s
+    end
+    doc['parts'] = p.parts.collect { |part| store_part_relational(db, part) }
+    db['parts'].insert(doc)
+    
+    doc.object_id
+  end
+
+  def self.to_mongo(config, interaction)
     include Mongo
 
     cl = MongoClient.new()
@@ -29,11 +40,23 @@ module Populate
 
     interaction.progress_start("=>#{config[:name]}", config[:files].length)
     config[:files].each() do |filename|
-      doc['messages'] << store_part_nested(Mail.read(filename))
+      doc['messages'] << yield(db, Mail.read(filename))
       interaction.progress_inc()
     end
 
     collection.insert(doc)
     interaction.progress_finish()
+  end
+
+  def self.to_mongo_nested(config, interaction)
+    to_mongo(config, interaction) do |db, message|
+      store_part_nested(message)
+    end
+  end
+
+  def self.to_mongo_relational(config, interaction)
+    to_mongo(config, interaction) do |db, message|
+      store_part_relational(db, message)
+    end
   end
 end
