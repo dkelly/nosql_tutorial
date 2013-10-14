@@ -7,7 +7,7 @@ module Queries
     cl.db['mail']['mailboxes']
   end
 
-  def self.folder_contents(cl, user, folder)
+  def self.folder_contents_nested(cl, user, folder)
     mailboxes(cl).find({ :user => user, :name => folder}).each() do |doc|
       puts "#{doc['name']}:"
       message_no = 1
@@ -24,7 +24,7 @@ module Queries
     end
   end
 
-  def self.user_information_nested(cl)
+  def self.user_information(cl)
     counts = {}
     mailboxes = mailboxes(cl)
     folder_counts = mailboxes.aggregate([
